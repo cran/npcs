@@ -40,8 +40,8 @@ w <- c(0, 1, 0)
 
 ## try NPMC-CX, NPMC-ER based on multinomial logistic regression, and vanilla multinomial
 ## logistic regression without SMOTE. NPMC-ER outputs the infeasibility error information.
-fit.npmc.CX <- try(npcs(x, y, algorithm = "CX", classifier = "logistic", w = w, alpha = alpha))
-fit.npmc.ER <- try(npcs(x, y, algorithm = "ER", classifier = "logistic", w = w, alpha = alpha,
+fit.npmc.CX <- try(npcs(x, y, algorithm = "CX", classifier = "multinom", w = w, alpha = alpha))
+fit.npmc.ER <- try(npcs(x, y, algorithm = "ER", classifier = "multinom", w = w, alpha = alpha,
 refit = TRUE))
 fit.vanilla <- nnet::multinom(y~., data = data.frame(x = x, y = factor(y)), trace = FALSE)
 
@@ -61,8 +61,8 @@ y <- D.syn$y
 
 ## try NPMC-CX, NPMC-ER based on multinomial logistic regression, and vanilla multinomial logistic
 ## regression with SMOTE. NPMC-ER can successfully find a solution after SMOTE.
-fit.npmc.CX <- try(npcs(x, y, algorithm = "CX", classifier = "logistic", w = w, alpha = alpha))
-fit.npmc.ER <- try(npcs(x, y, algorithm = "ER", classifier = "logistic", w = w, alpha = alpha,
+fit.npmc.CX <- try(npcs(x, y, algorithm = "CX", classifier = "multinom", w = w, alpha = alpha))
+fit.npmc.ER <- try(npcs(x, y, algorithm = "ER", classifier = "multinom", w = w, alpha = alpha,
 refit = TRUE))
 fit.vanilla <- nnet::multinom(y~., data = data.frame(x = x, y = factor(y)), trace = FALSE)
 

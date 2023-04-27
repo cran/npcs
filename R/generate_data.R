@@ -21,7 +21,7 @@ generate_data <- function(n = 1e3, model.no = 1)
     p <- 5
     X <- matrix(rnorm(n*p), nrow = n, ncol = p)
     mu <- matrix(nrow = 3, ncol = p)
-    mu[1, ] <- c(-1,2,1,1,1)
+    mu[1, ] <- c(-1,2,1,1,1)                    
     mu[2, ] <- c(1,1,0,2,0)
     mu[3, ] <- c(2,-1,-1,0,0)
     Y <- sample(1:3, size = n, replace = TRUE, prob = c(0.3, 0.3, 0.4))

@@ -8,17 +8,18 @@ npcs(
   x,
   y,
   algorithm = c("CX", "ER"),
-  classifier = c("logistic", "knn", "randomforest", "tree", "neuralnet", "svm", "lda",
-    "qda", "nb", "nnb"),
+  classifier,
+  seed = 1,
   w,
   alpha,
+  trControl = list(),
+  tuneGrid = list(),
   split.ratio = 0.5,
   split.mode = c("by-class", "merged"),
   tol = 1e-06,
   refit = TRUE,
   protect = TRUE,
-  opt.alg = c("Hooke-Jeeves", "Nelder-Mead"),
-  ...
+  opt.alg = c("Hooke-Jeeves", "Nelder-Mead")
 )
 }
 \arguments{
@@ -28,23 +29,17 @@ npcs(
 
 \item{algorithm}{the NPMC algorithm to use. String only. Can be either "CX" or "ER", which implements NPMC-CX or NPMC-ER in Tian, Y. & Feng, Y. (2021).}
 
-\item{classifier}{which model to use for estimating the posterior distribution P(Y|X = x). String only.
-\itemize{
-\item logistic: multinomial logistic regression, which is implemented via \code{\link[nnet]{multinom}} in package \code{nnet}.
-\item knn: k-nearest neighbor, which is implemented via \code{\link[caret]{knn3}} in package \code{caret}. An addition parameter (number of nearest neighbors) "k" is needed, which is 5 in default.
-\item randomforest: random forests, which is implemented via \code{\link[randomForest]{randomForest}} in package \code{randomForest}.
-\item tree: decition trees, which is implemented via \code{\link[rpart]{rpart}} in package \code{rpart}.
-\item neuralnet: single-layer neural networks, which is implemented via \code{\link[nnet]{nnet}} in package \code{nnet}.
-\item svm: support vector machines, which is implemented via \code{\link[e1071]{svm}} in package \code{e1071}.
-\item lda: linear discriminant analysis, which is implemented via \code{\link[MASS]{lda}} in package \code{MASS}.
-\item qda: quadratic discriminant analysis, which is implemented via \code{\link[MASS]{qda}} in package \code{MASS}.
-\item nb: naive Bayes classifier with Gaussian marginals, which is implemented via \code{\link[e1071]{naiveBayes}} in package \code{e1071}.
-\item nnb: naive Bayes classifier with non-parametric-estimated marginals (kernel-based), which is implemented via \code{\link[naivebayes]{nonparametric_naive_bayes}} in package \code{naivebayes}. The default kernel is the Gaussian kernel. Check the documentation of function \code{\link[naivebayes]{nonparametric_naive_bayes}} to see how to change the estimation settings.
-}}
+\item{classifier}{which model to use for estimating the posterior distribution P(Y|X = x). String only.}
+
+\item{seed}{random seed}
 
 \item{w}{the weights in objective function. Should be a vector of length K, where K is the number of classes.}
 
 \item{alpha}{the levels we want to control for error rates of each class. Should be a vector of length K, where K is the number of classes. Use NA if if no error control is imposed for specific classes.}
+
+\item{trControl}{list; resampling method}
+
+\item{tuneGrid}{list; for hyperparameters tuning or setting}
 
 \item{split.ratio}{the proportion of data to be used in searching lambda (cost parameters). Should be between 0 and 1. Default = 0.5. Only useful when \code{algorithm} = "ER".}
 
@@ -61,8 +56,6 @@ npcs(
 \item{protect}{whether to threshold the close-zero lambda or not. Boolean value. Default = TRUE. This parameter is set to avoid extreme cases that some lambdas are set equal to zero due to computation accuracy limit. When \code{protect} = TRUE, all lambdas smaller than 1e-03 will be set equal to 1e-03.}
 
 \item{opt.alg}{optimization method to use when searching lambdas. String only. Can be either "Hooke-Jeeves" or "Nelder-Mead". Default = "Hooke-Jeeves".}
-
-\item{...}{additional arguments. Will be passed to the function which fits the model indicated in \code{classifier}. For example, when \code{classifier} = "knn", the number of nearest neightbors \code{k} should be inputed. When \code{classifier} = "neuralnets"}
 }
 \value{
 An object with S3 class \code{"npcs"}.
@@ -91,24 +84,23 @@ y.test <- test.set$y
 # contruct the multi-class NP problem: case 1 in Tian, Y., & Feng, Y. (2021)
 alpha <- c(0.05, NA, 0.01)
 w <- c(0, 1, 0)
-
+\donttest{
 # try NPMC-CX, NPMC-ER, and vanilla multinomial logistic regression
-fit.npmc.CX <- try(npcs(x, y, algorithm = "CX", classifier = "logistic", w = w, alpha = alpha))
-fit.npmc.ER <- try(npcs(x, y, algorithm = "ER", classifier = "logistic", w = w, alpha = alpha,
-refit = TRUE))
 fit.vanilla <- nnet::multinom(y~., data = data.frame(x = x, y = factor(y)), trace = FALSE)
-
-# test error of NPMC-CX
-y.pred.CX <- predict(fit.npmc.CX, x.test)
-error_rate(y.pred.CX, y.test)
-
-# test error of NPMC-ER
-y.pred.ER <- predict(fit.npmc.ER, x.test)
-error_rate(y.pred.ER, y.test)
-
+fit.npmc.CX <- try(npcs(x, y, algorithm = "CX", classifier = "multinom", 
+w = w, alpha = alpha))
+fit.npmc.ER <- try(npcs(x, y, algorithm = "ER", classifier = "multinom", 
+w = w, alpha = alpha, refit = TRUE))
 # test error of vanilla multinomial logistic regression
 y.pred.vanilla <- predict(fit.vanilla, newdata = data.frame(x = x.test))
 error_rate(y.pred.vanilla, y.test)
+# test error of NPMC-CX
+y.pred.CX <- predict(fit.npmc.CX, x.test)
+error_rate(y.pred.CX, y.test)
+# test error of NPMC-ER
+y.pred.ER <- predict(fit.npmc.ER, x.test)
+error_rate(y.pred.ER, y.test)
+}
 }
 \references{
 Tian, Y., & Feng, Y. (2021). Neyman-Pearson Multi-class Classification via Cost-sensitive Learning. Submitted. Available soon on arXiv.

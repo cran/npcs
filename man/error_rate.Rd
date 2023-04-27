@@ -20,7 +20,7 @@ A vector of the error rate for each class. The vector name is the same as \code{
 Calculate the error rate for each class given the predicted labels and true labels.
 }
 \examples{
-# data generation: case 1 in Tian, Y., & Feng, Y. (2021) with p = 1000
+# data generation
 set.seed(123, kind = "L'Ecuyer-CMRG")
 train.set <- generate_data(n = 1000, model.no = 1)
 x <- train.set$x
@@ -30,26 +30,8 @@ test.set <- generate_data(n = 1000, model.no = 1)
 x.test <- test.set$x
 y.test <- test.set$y
 
-# contruct the multi-class NP problem: case 1 in Tian, Y., & Feng, Y. (2021)
-alpha <- c(0.05, NA, 0.01)
-w <- c(0, 1, 0)
-
-# try NPMC-CX, NPMC-ER with multinomial logistic regression, and vanilla multinomial
-## logistic regression
-fit.npmc.CX <- try(npcs(x, y, algorithm = "CX", classifier = "logistic", w = w, alpha = alpha))
-fit.npmc.ER <- try(npcs(x, y, algorithm = "ER", classifier = "logistic", w = w, alpha = alpha,
-refit = TRUE))
-fit.vanilla <- nnet::multinom(y~., data = data.frame(x = x, y = factor(y)), trace = FALSE)
-
-# test error of NPMC-CX
-y.pred.CX <- predict(fit.npmc.CX, x.test)
-error_rate(y.pred.CX, y.test)
-
-# test error of NPMC-ER
-y.pred.ER <- predict(fit.npmc.ER, x.test)
-error_rate(y.pred.ER, y.test)
-
-# test error of vanilla multinomial logistic regression
+library(nnet)
+fit.vanilla <- multinom(y~., data = data.frame(x = x, y = factor(y)), trace = FALSE)
 y.pred.vanilla <- predict(fit.vanilla, newdata = data.frame(x = x.test))
 error_rate(y.pred.vanilla, y.test)
 }

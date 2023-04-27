@@ -8,7 +8,7 @@ bibliography: reference.bib
 
 ---
 title: "A demonstration of the npcs package"
-author: "Ye Tian and Yang Feng"
+author: "Ye Tian, Ching-Tsung Tsai and Yang Feng"
 date: "`r Sys.Date()`"
 header-includes:
    - \usepackage{dsfont}
@@ -35,9 +35,10 @@ library(formatR)
 ```
 
 # Installation{#install}
-`RaSEn` can be installed from CRAN. 
+`npcs` can be installed from CRAN. 
 ```{r, eval=FALSE}
-install.packages("npcs", repos = "http://cran.us.r-project.org")
+# install.packages("npcs_0.1.1.tar.gz", repos=NULL, type='source')
+# install.packages("npcs", repos = "http://cran.us.r-project.org")
 ```
 Then we can load the package:
 ```{r}
@@ -46,7 +47,7 @@ library(npcs)
 
 
 # Introduction{#intro}
-Suppose there are $K$ classes ($K \geq 2$), and we denote them as classes $1$ to $K$. The training samples $\{(\bm{x}_i, y_i)\}_{i=1}^n$ are i.i.d. copies of $(X, Y) \subseteq \mathcal{X} \otimes \{1, \ldots, K\}$, where $\mathcal{X} \subseteq \mathbb{R}^p$. Suggested by @mossman1999three and @dreiseitl2000comparing, we consider $\mathbb{P}_{X|Y=k}(\phi(X)\neq k|Y=k)$ as the $k$-th error rate of classifier $\phi$ for any $k \in \{1, \ldots, K\}$. We focus on the problem which minimizes a weighted sum of $\{\mathbb{P}_{X|Y=k}(\phi(X)\neq k)\}_{k=1}^K$ and controls $\mathbb{P}_{X|Y=k}(\phi(X)\neq k)$ for $k \in \mathcal{A}$, where $\mathcal{A} \subseteq \{1, \ldots, K\}$. The Neyman-Pearson \textit{multi-class} classification (NPMC) problem can be formally presented as 
+Suppose there are $K$ classes ($K \geq 2$), and we denote them as classes $1$ to $K$. The training samples $\{({x}_i, y_i)\}_{i=1}^n$ are i.i.d. copies of $(X, Y) \subseteq \mathcal{X} \otimes \{1, \ldots, K\}$, where $\mathcal{X} \subseteq \mathbb{R}^p$. Suggested by @mossman1999three and @dreiseitl2000comparing, we consider $\mathbb{P}_{X|Y=k}(\phi(X)\neq k|Y=k)$ as the $k$-th error rate of classifier $\phi$ for any $k \in \{1, \ldots, K\}$. We focus on the problem which minimizes a weighted sum of $\{\mathbb{P}_{X|Y=k}(\phi(X)\neq k)\}_{k=1}^K$ and controls $\mathbb{P}_{X|Y=k}(\phi(X)\neq k)$ for $k \in \mathcal{A}$, where $\mathcal{A} \subseteq \{1, \ldots, K\}$. The Neyman-Pearson \textit{multi-class} classification (NPMC) problem can be formally presented as 
 \begin{align}
 	&\min_{\phi} \quad J(\phi) = \sum_{k=1}^K w_k \mathbb{P}_{X|Y=k}(\phi(X)\neq k) \\
 	&\text{s.t.} \quad \mathbb{P}_{X|Y=k}(\phi(X)\neq k) \leq \alpha_k, \quad k \in \mathcal{A}, \label{eq: NPMC}
@@ -57,7 +58,7 @@ This package implements two NPMC algorithms, NPMC-CX and NPMC-ER, which are moti
 
 
 # A Simple Example{#exp}
-We take Example 1 in @tian2021neyman as an example. Consider a three-class independent Gaussian conditional distributions $X|Y=k \sim N(\bm{\mu}_k, \bm{I}_p)$, where $p = 5$, $\bm{\mu}_1 = (-1,2,1,1,1)^T$, $\bm{\mu}_2 = (1,1,0,2,0)^T$, $\bm{\mu}_3 = (2,-1,-1,0,0)^T$ and $\bm{I}_p$ is the $p$-dimensional identity matrix. The marginal distribution of $Y$ is $\mathbb{P}(Y=1) = \mathbb{P}(Y=2) = 0.3$ and $\mathbb{P}(Y=3) = 0.4$. Training sample size $n = 1000$ and test sample size is 2000.
+We take Example 1 in @tian2021neyman as an example. Consider a three-class independent Gaussian conditional distributions $X|Y=k \sim N({\mu}_k, {I}_p)$, where $p = 5$, ${\mu}_1 = (-1,2,1,1,1)^T$, ${\mu}_2 = (1,1,0,2,0)^T$, ${\mu}_3 = (2,-1,-1,0,0)^T$ and ${I}_p$ is the $p$-dimensional identity matrix. The marginal distribution of $Y$ is $\mathbb{P}(Y=1) = \mathbb{P}(Y=2) = 0.3$ and $\mathbb{P}(Y=3) = 0.4$. Training sample size $n = 1000$ and test sample size is 2000.
 
 We would like to solve the following NP problem
 \begin{align}
@@ -92,9 +93,9 @@ error_rate(y.pred.vanilla, y.test)
 
 Then we conduct NPMC-CX and NPMC-ER based on multinomial logistic regression by calling function `npcs`. The user can indicate which algorithm to use in parameter `algorithm`. Also note that we need to input the target level `alpha` and weight `w`. For NPMC-ER, the user can decide whether to refit the model using all training data or not by the boolean parameter `refit`. Compared to the previous results of vanilla logistic regression, it shows that both NPMC-CX-logistic and NPMC-ER-logistic can successfully control $\mathbb{P}_{X|Y=1}(\phi(X)\neq 1)$ and $\mathbb{P}_{X|Y=3}(\phi(X)\neq 3)$ around levels 0.05 and 0.01, respectively.
 
-```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
-fit.npmc.CX.logistic <- try(npcs(x, y, algorithm = "CX", classifier = "logistic", w = w, alpha = alpha))
-fit.npmc.ER.logistic <- try(npcs(x, y, algorithm = "ER", classifier = "logistic", w = w, alpha = alpha, refit = TRUE))
+```{r message=FALSE, list(width.cutoff=70), tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+fit.npmc.CX.logistic <- try(npcs(x, y, algorithm = "CX", classifier = "multinom", w = w, alpha = alpha))
+fit.npmc.ER.logistic <- try(npcs(x, y, algorithm = "ER", classifier = "multinom", w = w, alpha = alpha, refit = TRUE))
 
 # test error of NPMC-CX-logistic
 y.pred.CX.logistic <- predict(fit.npmc.CX.logistic, x.test)
@@ -105,14 +106,14 @@ y.pred.ER.logistic <- predict(fit.npmc.ER.logistic, x.test)
 error_rate(y.pred.ER.logistic, y.test)
 ```
 
-We can also run NPMC-CX and NPMC-ER with different models, for example, LDA and random forests. They can also successfully control $\mathbb{P}_{X|Y=1}(\phi(X)\neq 1)$ and $\mathbb{P}_{X|Y=3}(\phi(X)\neq 3)$ around levels 0.05 and 0.01, respectively.
+We can use different models to run NPMC-CX and NPMC-ER. Our framework is built on top of the caret::train function from the Caret (Classification And Regression Training) package, which enables users to implement a wide range of classification methods using the `classifier` parameter. For instance, both LDA and Gradient Boosting Machine have effectively controlled the probabilities $\mathbb{P}_{X|Y=1}(\phi(X)\neq 1)$ and $\mathbb{P}_{X|Y=3}(\phi(X)\neq 3)$ at levels of approximately 0.05 and 0.01, respectively.
 
 ```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
 fit.npmc.CX.lda <- try(npcs(x, y, algorithm = "CX", classifier = "lda", w = w, alpha = alpha))
 fit.npmc.ER.lda <- try(npcs(x, y, algorithm = "ER", classifier = "lda", w = w, alpha = alpha, refit = TRUE))
-
-fit.npmc.CX.rf <- try(npcs(x, y, algorithm = "CX", classifier = "randomforest", w = w, alpha = alpha))
-fit.npmc.ER.rf <- try(npcs(x, y, algorithm = "ER", classifier = "randomforest", w = w, alpha = alpha, refit = TRUE))
+library(gbm)
+fit.npmc.CX.gbm <- try(npcs(x, y, algorithm = "CX", classifier = "gbm", w = w, alpha = alpha))
+fit.npmc.ER.gbm <- try(npcs(x, y, algorithm = "ER", classifier = "gbm", w = w, alpha = alpha, refit = TRUE))
 
 # test error of NPMC-CX-LDA
 y.pred.CX.lda <- predict(fit.npmc.CX.lda, x.test)
@@ -122,15 +123,52 @@ error_rate(y.pred.CX.lda, y.test)
 y.pred.ER.lda <- predict(fit.npmc.ER.lda, x.test)
 error_rate(y.pred.ER.lda, y.test)
 
-# test error of NPMC-CX-RF
-y.pred.CX.rf <- predict(fit.npmc.CX.rf, x.test)
-error_rate(y.pred.CX.rf, y.test)
+# test error of NPMC-CX-GBM
+y.pred.CX.gbm <- predict(fit.npmc.CX.gbm, x.test)
+error_rate(y.pred.CX.gbm, y.test)
 
-# test error of NPMC-ER-RF
-y.pred.ER.rf <- predict(fit.npmc.ER.rf, x.test)
-error_rate(y.pred.ER.rf, y.test)
+# test error of NPMC-ER-GBM
+y.pred.ER.gbm <- predict(fit.npmc.ER.gbm, x.test)
+error_rate(y.pred.ER.gbm, y.test)
 ```
+
+By default, the base model may perform tuning on certain tuning parameters before running the NPMC-CX and NPMC-ER algorithms. However, we can modify the set of tuning parameter candidates using the `tuneGrid` parameter and specify the resampling method using the `trControl` parameter. The `tuneGrid` parameter accepts values that are transformed into a data.frame with all possible combinations of tuning parameters and passed to the base model's `tuneGrid` parameter. Meanwhile, values in the `trControl` parameter are provided to the `caret::trainControl` function and passed to the base model's `trControl` parameter. For more information on hyperparameters in different models, please see chapters [5.5.2](https://topepo.github.io/caret/model-training-and-tuning.html#alternate-tuning-grids) and [5.5.4](https://topepo.github.io/caret/model-training-and-tuning.html#the-traincontrol-function) in the Caret documentation.
+
+In the below example, to implement a NPMC-CX model using knn as the base model, we specify k values as 5,7,9 and performs a five-fold cross-validation.
+
+```{r}
+# 5-fold cross validation with tuning parameters k = 5,7,9
+fit.npmc.CX.knn <- npcs(x, y, algorithm = "CX", classifier = "knn", w = w, 
+                            alpha = alpha,seed = 1, 
+                            trControl = list(method="cv", number=3), 
+                            tuneGrid = list(k=c(5,7,9)))
+# the optimal hypterparameter is k=9
+fit.npmc.CX.knn$fit
+y.pred.CX.knn <- predict(fit.npmc.CX.knn, x.test)
+error_rate(y.pred.CX.knn, y.test)
+```
+
+We can use the `cv.npcs` function to automatically compare the performance of the NPMC-CX, NPMC-ER, and vanilla models through cross-validation or bootstrapping methods. K-fold cross-validation can be specified using the `fold` parameter and setting `resample` to `"cv"`. Alternatively, bootstrapping can be specified using the `fold` parameter, `partition_ratio` parameter, and setting `resample` to "boot". Here, `fold` represents the number of iterations and `partition_ratio` represents the proportion of data used for constructing the model in each iteration. Additionally, we can use the `stratified` argument to enable stratified sampling.
+
+The `cv.npcs` function produces several outputs. First, a summary of model evaluation is generated, which includes various evaluation metrics such as accuracy, class-specific error rates, Matthews correlation coefficient, micro-F1, macro-F1, Kappa, and balanced accuracy. Class-specific error rates are displayed using a combination of violin and box plots, which can be disabled using `plotit=FALSE`. Other outputs include the training and testing error rates of the two algorithms and base model for each fold, the validation set data indices for each fold, and the arithmetic mean of the confusion matrix and sample size in the validation set.
+
+```{r warning=FALSE}
+cv.npcs.knn <- cv.npcs(x, y, classifier = "knn", w = w, alpha = alpha,
+                         # fold=5, stratified=TRUE, partition_ratio = 0.7
+                         # resample=c("bootstrapping", "cv"),seed = 1, 
+                         # plotit=TRUE, trControl=list(), tuneGrid=list(), 
+                         # verbose=TRUE
+                         )
+cv.npcs.knn$summaries
+cv.npcs.knn$plot
+```
+
 # Reference
+
+
+
+
+
 
 
 

@@ -1,3 +1,103 @@
+mcc <- function(t1){
+  # TO-DO: return the Matthew’s correlation coefficient 
+  # :param t1: table(prediction, reference), the confusion matrix 
+  k = ncol(t1)
+  n = sum(t1)
+  if (n==0) return(NaN)  # if all model infeasible
+  if (k>2){
+    wr = colSums(t1);wp = rowSums(t1)               
+    tr = sapply(1:k, function(i) t1[i,i]) 
+    cov_xy = n*sum(tr) - sum(wp * wr)                      # MCC numerator
+    cov_xxyy = (n**2 - sum(wp*wp)) * (n**2 - sum(wr*wr))   # MCC denominator^2
+    mcc = ifelse(cov_xxyy==0,0, cov_xy / sqrt(cov_xxyy))
+    return(mcc)
+  } else if (k==2){
+      # turn sum(t1[2,]) to float -> avoid integer overflow
+      mcc = (t1[1,1]*t1[2,2] - t1[2,1]*t1[1,2])/sqrt(as.numeric(sum(t1[2,]))*sum(t1[,2])*sum(t1[,1])*sum(t1[1,]) )
+    return(mcc)
+  } else {
+  warning("The dimension of input table should be >= 2")
+  }
+}
+
+model_eval <- function(t1, verbose=FALSE){
+  # :param x: table(prediction, reference), the confusion matrix 
+  # :param verbose: If FALSE, the function will remain silent
+  # Note: Use table instead of y values as input to save computation memories 
+  #       We can do one simple evaluation when resampling
+  n = sum(t1)
+  k = ncol(t1) 
+  wr = colSums(t1);wp = rowSums(t1)              # weight of reference/prediction
+  tr = sapply(1:k, function(i) t1[i,i])          # trace before summation
+  # Accuracy:
+  acc = sum(tr)/n
+  if (k>2){                                       # multiclass
+    # F1 score calculation
+    rc <- tr/wr ; pc <- tr/wp                     # recall ; precision
+    f1 <- 2*rc*pc/(rc+pc)   
+    # Balanced accuracy:
+    bac <- mean(rc)
+    # MCC calculation:
+    mcc_val = mcc(t1)
+    # Cohen's kappa calculation:
+    ex = sum(wr/n*wp/n)                           # expectation if independent
+    ag = sum(sapply(1:k, function(i) t1[i,i]))/n  # agreement
+    kp = (ag-ex)/(1-ex)
+    output <- c(acc,mcc_val,sum(f1*wr/n),mean(f1),kp, bac)
+    names(output) <- c("accuracy", "mcc", "microF1", "macroF1", "Kappa", "BAC")
+    return(output)
+  } else if (k==2){  # binary
+    if (verbose) cat("Reference group for binary classification:", colnames(t1)[1],"\n")
+    rc = tr[2]/wr[2]  # recall
+    pc = tr[1]/wp[1]  # precision
+    sp = tr[1]/wr[1]  # specificity
+    bac = (rc+sp)/2   # balanced accuracy
+    # gms = sqrt(rc*pc) # G measure
+    f1_val = 2*rc*pc/(rc+pc) # f1
+    ex = sum(wr/n*wp/n)                           # expectation if independent
+    ag = sum(sapply(1:k, function(i) t1[i,i]))/n  # agreement
+    kp = (ag-ex)/(1-ex)
+    mcc_val = mcc(t1)
+    output <- c(acc,mcc_val,f1_val,rc,pc,sp,kp,bac)
+    names(output) <- c("accuracy", "mcc","F1", "recall", "precision", 
+                       "specificity", "kappa", "BAC")
+    return(output)
+    }
+  }
+modeling <- function(data, classifier, trControl=list(), tuneGrid=list(), seed=1){
+  # ---
+  # :params data: 
+  # :params trControl: list, inputs for resampling in caret::train; default method="none"
+  # :params tuneGrid: list, inputs for hyperparameters tuning in caret::train()
+  # if classifier is not customized -> use the default trControl & tuneGrid in caret -> may be very slow
+  # ---
+  # trainControl:
+  trControl <- do.call(trainControl,trControl) 
+  # tuneGrid:
+  tuneGrid <- do.call(expand.grid, tuneGrid)
+  set.seed(-seed, kind = "L'Ecuyer-CMRG")
+  params <- list(as.formula("y~."), data=data, method=classifier, 
+                 trControl=trControl, tuneGrid=tuneGrid)
+  # remove trControl & tuneGrid from params if empty:
+  params <- lapply(params, function(x) if (length(x)!=0) return(x) )
+  params <- params[!sapply(params,is.null)]        
+  if (classifier=="gbm") {             # suppress messages from some classifiers
+    params[["verbose"]] <- F
+  } else if (classifier=="xgbTree"){
+    params[["verbosity"]] <- 0
+  } else if (classifier %in% c("multinom", "nnet") ){
+    params[["trace"]] <- F
+    }
+  fit <- try(do.call(caret::train, params))
+  if ("try-error" %in% class(fit)) {
+    warning("If you reset any hyperparameter, all required hyperparameters of ",
+            classifier," need to be specified by parameter tuneGrid.\nFor more details, check caret::modelLookup(\"",classifier,"\")")
+    return(fit)
+  } else {
+    return(fit)
+    }
+}
+
 obj.CX <- function(lambda, w, pik, alpha, posterior, index) {
   lambda.full <- rep(0, length(w))
   lambda.full[index] <- lambda
